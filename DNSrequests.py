@@ -47,7 +47,12 @@ def get_host(addr, dns_server="192.168.1.1", dns_port=53):
         raw_address += octet.encode('utf-8')
 
     txid = bytes.fromhex('0001')  # TXID (should be randomised really)
-    flags_bitmask = bytes.fromhex(f'0100')  # STANDARD QUERY RECURSION DESIRED 0b0000000100000000
+    binary_flags = 0b0000000100000000 # STANDARD QUERY RECURSION DESIRED 0b0000000100000000
+    hex_flags = hex(binary_flags)[2:]
+    while len(hex_flags) < 4:
+        hex_flags = '0' + hex_flags
+    flags_bitmask = bytes.fromhex(hex_flags)
+
     qs = bytes.fromhex('0001')  # 1 QUESTION
     ans = bytes.fromhex('0000')  # 0 ANSWERS
     auths = bytes.fromhex('0000')  # 0 AUTHS
@@ -62,10 +67,42 @@ def get_host(addr, dns_server="192.168.1.1", dns_port=53):
     s.sendto(data, (dns_server, dns_port))
 
     res = s.recv(2048)
-    return DNSMessage(res)
+    return reverse_dns_response(res)
 
+def get_addr(host, dns_server="192.168.1.1", dns_port=53):
+    txid = bytes.fromhex('0001')
+    binary_flags = 0b000100000000
+    hex_flags = hex(binary_flags)[2:]
+    while len(hex_flags) < 4:
+        hex_flags = '0' + hex_flags
+    flags_bitmask = bytes.fromhex(hex_flags)
+    qs = bytes.fromhex('0001')
+    ans = bytes.fromhex('0000')
+    auths = bytes.fromhex('0000')
+    additional = bytes.fromhex('0000')
+    req_type = bytes.fromhex('0001')    # 1 = A (IPv4 lookup)
+    req_class = bytes.fromhex('0001')   # 1 = IN (Internet)
 
-class DNSMessage():
+    host_parts = host.split('.')
+    hostencoded = b''
+    for part in host_parts:
+        hexlen = hex(len(part))[2:]
+        while len(hexlen) < 2:
+            hexlen = '0' + hexlen
+        hostencoded += bytes.fromhex(hexlen)
+        hostencoded += part.encode('utf-8')
+    hostencoded += b'\x00'
+
+    data = b''.join([txid, flags_bitmask, qs, ans, auths, additional,
+                     hostencoded, req_type, req_class])
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(("0.0.0.0", 8998))
+    s.sendto(data, (dns_server, dns_port))
+    res = s.recv(2048)
+    return res
+
+class reverse_dns_response():
     def __init__(self, data):
         split_bytes = [hex(x)[2:] for x in data]
         self.txid = int(''.join([split_bytes[0], split_bytes[1]]), 16)
