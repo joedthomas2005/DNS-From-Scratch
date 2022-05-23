@@ -12,10 +12,11 @@ if __name__ == "__main__":
     rawCharArray = dnslib.getCurrentDNS()
     dnsServer = ""
     for i in range(16):
-        if i == '\x00':
+        if rawCharArray[i] == b'\x00':
             break
         dnsServer += rawCharArray[i].decode()
     
+    print("USING NAMESERVER: ", dnsServer)
     address = input("PLEASE ENTER IP ADDRESS: ")
     response = DNSrequests.get_host(address, dnsServer)
     print("REQUEST FOR ", response.address_lookup_name)

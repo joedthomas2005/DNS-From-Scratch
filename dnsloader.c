@@ -5,11 +5,6 @@
 #include<stdlib.h>
 #include<stdio.h>
 
-typedef struct String{
-    char* data;
-    unsigned int length;
-} String;
-
 typedef struct Node {
     struct Node* next;
     unsigned char character;
@@ -24,8 +19,6 @@ void addNode(Node* head, char value){
     cur->next = (Node*)malloc(sizeof(Node)); 
     cur->next->initialised = 1;
     cur->next->character = value;
-
-
 }
 
 void printLinkedList(Node* head){
@@ -46,7 +39,12 @@ char* getCurrentDNS(){
         FIXED_INFO* paramBuffer = (FIXED_INFO*)malloc(sizeof(FIXED_INFO));
         ULONG bufSize = sizeof(FIXED_INFO);
         GetNetworkParams(paramBuffer, &bufSize);
-        String ipaddr = (String){ .data = paramBuffer->DnsServerList.IpAddress.String, .length = 16};
+        char* ipaddr = paramBuffer->DnsServerList.IpAddress.String;
+        
+        char* copy = (char*)malloc(sizeof(char) * 16);
+        strcpy_s(copy, sizeof(char) * 16, paramBuffer->DnsServerList.IpAddress.String);
+        free(paramBuffer);
+        return copy;
     #else
         FILE* resolv = fopen("/etc/resolv.conf", "r");
         char fileBuff[1024];
@@ -68,7 +66,6 @@ char* getCurrentDNS(){
             }
         }
 
-        printf("CREATING LINKED LISTS\n");
         Node lines[numLines];
         lines[0] = (Node){.character = fileBuff[0], .initialised = 1};
         int line = 0;
@@ -76,23 +73,36 @@ char* getCurrentDNS(){
         for(int i = 1; i < length; i++){
             char currentChar = fileBuff[i];
             if(currentChar == '\n'){
-                printf("NEW LINE\n");
                 line += 1;
             }
             else{
                 if(lines[line].initialised == 1){
-                    printf("ADDING CHARACTER %c\n", fileBuff[i]);
                     addNode(&lines[line], fileBuff[i]);
                     printLinkedList(&lines[line]);
                     printf("\n");
                 }
                 else{
-                    printf("INITIALISING NEW LINE\n");
                     lines[line] = (Node){.character = currentChar, .initialised = 1};
                 }
             }
         }
 
+        char* ipaddr = (char*)malloc(sizeof(char) * 16);
+        for(int i = 0; i < numLines; i++){
+            if(lines[i].character != "#"){
+                Node* cur = &lines[i];
+                while(cur->character != " ");
+                    cur = cur->next;
+                int character = 0;
+                while(cur){
+                    ipaddr[character] = cur->character;
+                    character++;
+                }
+                ipaddr[character + 1] = 0;
+            }
+        }
+
+        return ipaddr;
+
     #endif
-    return paramBuffer->DnsServerList.IpAddress.String;
 };

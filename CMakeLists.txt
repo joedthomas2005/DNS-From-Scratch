@@ -4,7 +4,7 @@ project(DNS_From_Scratch C)
 set(CMAKE_C_STANDARD 11)
 
 add_library(dnsloader SHARED
-        getConfig.c)
+        dnsloader.c)
 add_executable(testDNS
         testDNS.c)
 
