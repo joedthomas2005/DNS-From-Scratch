@@ -1,4 +1,4 @@
-#if __has_include(<iphpapi.h>)
+#if __has_include(<iphlpapi.h>)
 #include<iphlpapi.h>
 #define onWindows
 #endif
@@ -41,13 +41,12 @@ void printLinkedList(Node* head){
     }
 }
 
-String getCurrentDNS(){
+char* getCurrentDNS(){
     #ifdef onWindows
         FIXED_INFO* paramBuffer = (FIXED_INFO*)malloc(sizeof(FIXED_INFO));
         ULONG bufSize = sizeof(FIXED_INFO);
         GetNetworkParams(paramBuffer, &bufSize);
         String ipaddr = (String){ .data = paramBuffer->DnsServerList.IpAddress.String, .length = 16};
-        free(paramBuffer);
     #else
         FILE* resolv = fopen("/etc/resolv.conf", "r");
         char fileBuff[1024];
@@ -95,10 +94,5 @@ String getCurrentDNS(){
         }
 
     #endif
-    //return ipaddr;
+    return paramBuffer->DnsServerList.IpAddress.String;
 };
-
-int main(){
-    getCurrentDNS();
-    return 0;
-}
