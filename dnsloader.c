@@ -35,86 +35,98 @@ void printLinkedList(Node* head){
     }
 }
 
+void freeLinkedList(Node* head){
+    //WE CANNOT FREE HEAD NODES. HEAD NODES ARE ON STACK.
+    Node* cur = head->next;
+    printf("FREEING LINKED LIST: ");
+    printLinkedList(head);
+    printf("\n");
+    while(cur){
+        Node* prev = cur;
+        cur = cur->next;
+        free(prev);
+    }
+}
+char* loadDNSFromFile(char* file){
+    FILE* resolv = fopen(file, "r");
+    char fileBuff[1024];
+    fread(fileBuff, sizeof(char), sizeof(fileBuff), resolv);
+    
+    int i = 0;
+    int numLines = 0;
+    while(fileBuff[i]){
+        i++;
+        if(fileBuff[i] == '\n'){
+            numLines++;
+        }
+    }
+    const int length = i;
+
+    if(fclose(resolv)){
+        printf("FILE FAILED TO CLOSE");
+        exit(EXIT_FAILURE); 
+    };
+
+    Node lines[numLines];
+    lines[0] = (Node){.character = fileBuff[0], .initialised = 1, .next = (Node*)NULL};
+    int line = 0;
+    int character = 0;
+    for(int i = 1; i < length; i++){
+        char currentChar = fileBuff[i];
+        if(currentChar == '\n'){
+            line += 1;
+        }
+        else{
+            if(lines[line].initialised == 1){
+                addNode(&(lines[line]), fileBuff[i]);
+            }
+            else{
+                lines[line] = (Node){.character = currentChar, .initialised = 1, .next = (Node*)NULL};
+            }
+        }
+    }
+
+    char* ipaddr = (char*)malloc(sizeof(char) * 16);
+    int found = 0;
+    printf("There are %i lines\n", numLines);
+    for(int i = 0; i < numLines; i++){
+        printf("On line: %i\n", i);
+        if(lines[i].character != '#'){
+            found = 1;
+            Node* cur = &(lines[i]);
+            while(cur->character != ' '){
+                cur = cur->next;
+            }
+            cur = cur->next;
+            int character = 0;
+            while(cur){
+                ipaddr[character] = cur->character;
+                character++;
+                cur = cur->next;
+            }
+            ipaddr[character + 1] = 0;
+            freeLinkedList(&(lines[i]));
+        }
+        else{
+            freeLinkedList(&(lines[i]));
+        }
+    }
+    if(!found){
+        ipaddr = "";
+    }
+    return ipaddr;
+}
+
 char* getCurrentDNS(){
-    printf("LOADING DNS");
     #ifdef onWindows
         FIXED_INFO* paramBuffer = (FIXED_INFO*)malloc(sizeof(FIXED_INFO));
         ULONG bufSize = sizeof(FIXED_INFO);
-        GetNetworkParams(paramBuffer, &bufSize);
-        char* ipaddr = paramBuffer->DnsServerList.IpAddress.String;
-        
+        GetNetworkParams(paramBuffer, &bufSize);        
         char* copy = (char*)malloc(sizeof(char) * 16);
         strcpy_s(copy, sizeof(char) * 16, paramBuffer->DnsServerList.IpAddress.String);
         free(paramBuffer);
         return copy;
     #else
-        printf("NOT ON WINDOWS");
-        FILE* resolv = fopen("/etc/resolv.conf", "r");
-        printf("FILE OPENED");
-        char fileBuff[1024];
-        fread(fileBuff, sizeof(char), sizeof(fileBuff), resolv);
-        int i = 0;
-        while(fileBuff[i]){
-            i++;
-        }
-        const int length = i;
-        if(fclose(resolv)){
-            printf("FILE FAILED TO CLOSE");
-            exit(EXIT_FAILURE); 
-        };
-
-        int numLines = 0;
-        for(int i =0; i < length;i++){
-            if(fileBuff[i] == '\n'){
-                printf("NEW LINE");
-                numLines++;
-            }
-        }
-
-        Node lines[numLines];
-        lines[0] = (Node){.character = fileBuff[0], .initialised = 1, .next = (Node*)NULL};
-        int line = 0;
-        int character = 0;
-        printf("length: %i\n", length);
-        for(int i = 1; i < length; i++){
-            char currentChar = fileBuff[i];
-            printf("%i: %c\n", i, currentChar);
-            if(currentChar == '\n'){
-                line += 1;
-            }
-            else{
-                if(lines[line].initialised == 1){
-                    addNode(&(lines[line]), fileBuff[i]);
-                    // printLinkedList(&(lines[line]));
-                    // printf("\n");
-                }
-                else{
-                    printf("NEW LINE: %c\n", currentChar);
-                    lines[line] = (Node){.character = currentChar, .initialised = 1, .next = (Node*)NULL};
-                }
-            }
-        }
-
-        char* ipaddr = (char*)malloc(sizeof(char) * 16);
-        for(int i = 0; i < numLines; i++){
-            // printLinkedList(&(lines[i]));
-            // printf('%c', lines[i].character);
-            if(lines[i].character != '#'){
-                printf("FOUND NAMESERVER AT %i", i);
-                Node* cur = &(lines[i]);
-                while(cur->character != ' ');
-                    cur = cur->next;
-                int character = 0;
-                while(cur){
-                    ipaddr[character] = cur->character;
-                    character++;
-                    cur = cur->next;
-                }
-                ipaddr[character + 1] = 0;
-            }
-        }
-        puts(ipaddr);
-        return ipaddr;
-
+        loadDNSFromFile("/etc/resolv.conf");
     #endif
 };
