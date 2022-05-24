@@ -4,8 +4,12 @@
 extern char* getCurrentDNS();
 extern char* loadDNSFromFile(char* path);
 int main(){
-    printf("LOADING DNS CONFIGURATION\n");
-    char* ipaddr = loadDNSFromFile("sample.resolv.conf");
+    printf("PLATFORM NATIVE OUTPUT\n");
+    char* ipaddr = getCurrentDNS();
+    puts(ipaddr);
+    free(ipaddr);
+    printf("LINUX RESOLV.CONF LOADER OUTPUT\n");
+    ipaddr = loadDNSFromFile("sample.resolv.conf");
     puts(ipaddr);
     return 0;
 }
