@@ -62,6 +62,7 @@ void freeLinkedList(Node* head){
         cur = cur->next;
         free(prev);
     }
+    head->next = NULL;
 }
 char* loadDNSFromFile(char* file){
     /**
@@ -75,8 +76,8 @@ char* loadDNSFromFile(char* file){
     long fsize = ftell(resolv);
     fseek(resolv, 0, SEEK_SET);
 
-    char* fileBuff = (char*)malloc(fsize + 1);
-    fread(fileBuff, fsize, 1, resolv);
+    char* fileBuff = malloc(sizeof(char) * (fsize + 1));
+    fread(fileBuff, sizeof(char), fsize, resolv);
     
     if(fclose(resolv)){
         printf("FILE IO ERROR\n");
@@ -89,32 +90,31 @@ char* loadDNSFromFile(char* file){
     else{
         fileBuff[fsize] = 0;
     }
-
-    int i = 0;
+    int length = 0;
     int numLines = 1; 
-    while(fileBuff[i]){
-        i++;
-        if(fileBuff[i] == '\n'){
+    while(fileBuff[length]){
+        if(fileBuff[length] == '\n'){
             numLines++;
         }
+        length++;
     }
-    const int length = i;
-    Node* lines = (Node*)malloc(sizeof(Node) * numLines);
 
-    lines[0] = (Node){.character = fileBuff[0], .initialised = 1, .next = (Node*)NULL};
+    Node* lines = (Node*)malloc(sizeof(Node) * numLines);
+    lines[0] = (Node){.character = fileBuff[0], .initialised = 1, .next = NULL};
     int line = 0;
-    for(int j = 1; j < length; j++){
-        char currentChar = fileBuff[j];
+    for(int i = 1; i < length; i++){
+        char currentChar = fileBuff[i];
         if(currentChar == '\n'){
             line += 1;
         }
         else{
             if(lines[line].initialised == 1){
-                addNode(&(lines[line]), fileBuff[j]);
+                addNode(lines + line, fileBuff[i]);
             }
             else{
-                lines[line] = (Node){.character = currentChar, .initialised = 1, .next = (Node*)NULL};
+                lines[line] = (Node){.character = currentChar, .initialised = 1, .next = NULL};
             }
+            
         }
     }
     free(fileBuff);
@@ -124,7 +124,7 @@ char* loadDNSFromFile(char* file){
     for(int i = 0; i < numLines; i++){
         if(lines[i].character != '#'){
             found = 1;
-            Node* cur = &(lines[i]);
+            Node* cur = lines + i;
             while(cur->character != ' '){
                 cur = cur->next;
             }
@@ -136,13 +136,14 @@ char* loadDNSFromFile(char* file){
                 cur = cur->next;
             }
             ipaddr[character] = 0;
-            freeLinkedList(&(lines[i]));
+            freeLinkedList(lines + i);
         }
         else{
-            freeLinkedList(&(lines[i]));
+            freeLinkedList(lines + i);
         }
     }
     free(lines);
+
     if(!found){
         ipaddr = "";
     }

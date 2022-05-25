@@ -17,6 +17,7 @@ if __name__ == "__main__":
             dnslib = ctypes.CDLL("build/libdnsloader.so")
         else:
             print("ERROR: DNS loader shared library not found. Did you run CMake?")
+            
     dnslib.getCurrentDNS.restype = ctypes.POINTER(ctypes.c_char)
     rawCharArray = dnslib.getCurrentDNS()
     dnsServer = ""
