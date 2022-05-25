@@ -100,8 +100,27 @@ def get_addr(host, dns_server="192.168.1.1", dns_port=53):
     s.bind(("0.0.0.0", 8998))
     s.sendto(data, (dns_server, dns_port))
     res = s.recv(2048)
-    return res
+    return dns_response(res)
 
+class dns_response():
+    def __init__(self, data):
+        split_bytes = [hex(x)[2:] for x in data]
+        self.txid = int(''.join([split_bytes[0], split_bytes[1]]), 16)
+        flags_bitmask = int(''.join([split_bytes[2], split_bytes[3]]), 16)
+        
+        self.message_type = 'r' if 0b1000000000000000 & flags_bitmask == 0b1000000000000000 else 'q'
+        self.opcode = 0b0111100000000000 & flags_bitmask
+        self.server_is_authoritative = 0b0000010000000000 & flags_bitmask == 0b0000010000000000
+        self.truncated = 0b0000001000000000 & flags_bitmask == 0b0000001000000000
+        self.recursion_desired = 0b0000000100000000 & flags_bitmask == 0b0000000100000000
+        self.recursion_available = 0b0000000010000000 & flags_bitmask == 0b0000000010000000
+        self.status_code = 0b0000000000001111 & flags_bitmask
+
+        self.questions = int(''.join([split_bytes[4], split_bytes[5]]), 16)
+        self.answers = int(''.join([split_bytes[6], split_bytes[7]]), 16)
+        self.authorities = int(''.join([split_bytes[8], split_bytes[9]]), 16)
+        self.additional = int(''.join([split_bytes[10], split_bytes[11]]), 16)
+        
 class reverse_dns_response():
     def __init__(self, data):
         split_bytes = [hex(x)[2:] for x in data]

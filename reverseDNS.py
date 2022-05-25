@@ -20,6 +20,7 @@ if __name__ == "__main__":
             
     dnslib.getCurrentDNS.restype = ctypes.POINTER(ctypes.c_char)
     rawCharArray = dnslib.getCurrentDNS()
+
     dnsServer = ""
     for i in range(16):
         if rawCharArray[i] == b'\x00':
@@ -27,13 +28,16 @@ if __name__ == "__main__":
         dnsServer += rawCharArray[i].decode()
     
     print(f"USING NAMESERVER: {dnsServer}")
-    
-    address = input("PLEASE ENTER IP ADDRESS: ")
-    response = DNSrequests.get_host(address, dnsServer)
-    print("REQUEST FOR ", response.address_lookup_name)
-    if(response.server_is_authoritative):
-        print("AUTHORITATIVE ANSWER: ")
-    else:
-        print("NON-AUTHORITATIVE ANSWER: ")
-    print(response.domain_name)
 
+    # address = input("PLEASE ENTER IP ADDRESS: ")
+    # response = DNSrequests.get_host(address, dnsServer)
+    # print("REQUEST FOR ", response.address_lookup_name)
+    # if(response.server_is_authoritative):
+    #     print("AUTHORITATIVE ANSWER: ")
+    # else:
+    #     print("NON-AUTHORITATIVE ANSWER: ")
+    # print(response.domain_name)
+
+    domain_name = input("PLEASE ENTER DOMAIN NAME: ")
+    response = DNSrequests.get_addr(domain_name, dnsServer)
+    print(f"{response.answers} answers and {response.questions} questions given")

@@ -64,6 +64,7 @@ void freeLinkedList(Node* head){
     }
     head->next = NULL;
 }
+
 char* loadDNSFromFile(char* file){
     /**
      * Load and parse a file with resolv.conf syntax. 
