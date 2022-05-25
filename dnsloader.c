@@ -70,8 +70,7 @@ char* loadDNSFromFile(char* file){
      * "nameserver x.x.x.x". 
      */
 
-    FILE* resolv;
-    fopen_s(&resolv, file, "r");
+    FILE* resolv = fopen(file, "r");
     fseek(resolv, 0, SEEK_END);
     long fsize = ftell(resolv);
     fseek(resolv, 0, SEEK_SET);
@@ -84,7 +83,12 @@ char* loadDNSFromFile(char* file){
         exit(EXIT_FAILURE); 
     };
     
-    fileBuff[fsize] = 0;
+    if(fileBuff[fsize-1] == '\n'){
+        fileBuff[fsize-1] = 0;
+    }
+    else{
+        fileBuff[fsize] = 0;
+    }
 
     int i = 0;
     int numLines = 1; 
@@ -99,15 +103,14 @@ char* loadDNSFromFile(char* file){
 
     lines[0] = (Node){.character = fileBuff[0], .initialised = 1, .next = (Node*)NULL};
     int line = 0;
-    int character = 0;
-    for(int i = 1; i < length; i++){
-        char currentChar = fileBuff[i];
+    for(int j = 1; j < length; j++){
+        char currentChar = fileBuff[j];
         if(currentChar == '\n'){
             line += 1;
         }
         else{
             if(lines[line].initialised == 1){
-                addNode(&(lines[line]), fileBuff[i]);
+                addNode(&(lines[line]), fileBuff[j]);
             }
             else{
                 lines[line] = (Node){.character = currentChar, .initialised = 1, .next = (Node*)NULL};
