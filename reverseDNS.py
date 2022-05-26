@@ -9,6 +9,8 @@ if __name__ == "__main__":
             dnslib = ctypes.WinDLL("build/libdnsloader.dll")
         elif os.path.exists("build/dnsloader.dll"):
             dnslib = ctypes.WinDLL("build/dnsloader.dll")
+        elif os.path.exists("build/Debug/dnsloader.dll"):
+            dnslib = ctypes.WinDLL("build/Debug/dnsloader.dll")
         else:
             print("ERROR: DNS loader shared library not found. Did you run CMake?")
             exit()
